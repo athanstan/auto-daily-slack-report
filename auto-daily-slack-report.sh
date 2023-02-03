@@ -31,7 +31,7 @@ while [ $# -gt 0 ]; do
     # Check if the argument is either --list or -l
     elif [ "$arg" == "--list" ] || [ "$arg" == "-l" ]; then
         # Get the list of all the folders inside the ~/Code directory
-        projects=($(find ~/Code/ -maxdepth 1 -type d -exec basename {} \; | awk -F/ '{print $NF}' | sort))
+        projects=($(find $CODE_DIR -maxdepth 1 -type d -exec basename {} \; | awk -F/ '{print $NF}' | sort))
 
         # Display a message indicating the available projects
         echo "Available projects: "
@@ -49,7 +49,7 @@ while [ $# -gt 0 ]; do
         folder_name="$arg"
         username=$GIT_USERNAME
         # Change directory to the folder
-        cd ~/Code/$folder_name
+        cd $CODE_DIR$folder_name
 
         # Use git log to get all commits for today
         commits=$(git log --since=yesterday --date=short --oneline --author="$username")
@@ -70,6 +70,29 @@ while [ $# -gt 0 ]; do
     fi
     shift # remove the processed argument from the list
 done
+
+
+
+if [[ ${#all_commits[@]} -eq 0 ]]; then
+    
+    echo -e "
+    Today you have made commits on:
+    --------------------------"
+projects=($(find "$CODE_DIR" -maxdepth 1 -type d -exec basename {} \; | awk -F/ '{print $NF}' | sort))
+
+    for project in "${projects[@]}"; do
+    if [[ -d "$CODE_DIR/$project" ]]; then
+        cd "$CODE_DIR/$project"
+        if [[ $(git log --since=yesterday --date=short --oneline --author="$username" 2> /dev/null | wc -l) -gt 0 ]]; then
+            echo "    - $project"
+        fi
+    fi
+    done
+
+    echo -e "    --------------------------"
+    echo exiting...;
+    exit;
+fi
 
 # Format the commit messages as a list
 echo -e "Author: $username \nProject: $folder_name\n"
